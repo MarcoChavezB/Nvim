@@ -1,18 +1,13 @@
 return {
   {
-    "MeanderingProgrammer/render-markdown.nvim",
-    opts = {},
-    dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
-  },
-
-  {
     "nvim-treesitter/nvim-treesitter",
     opts = {
+      ensure_installed = {},
       auto_install = false,
       sync_install = false,
-      -- Forzamos a usar únicamente el GCC interno de Debian
-      compilers = { "gcc" },
-      ensure_installed = {}, -- Lo dejamos completamente vacío
+      highlight = {
+        enable = false, -- Desactiva el motor de highlighting por C-parser de Treesitter
+      },
     },
   },
 }
