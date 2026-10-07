@@ -1,6 +1,3 @@
--- Keymaps are automatically loaded on the VeryLazy event
--- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
--- Add any additional keymaps here
 vim.keymap.set("n", "<leader>h", function() LazyVim.pick("live_grep")() end, { desc = "Búsqueda global de palabra" })
 vim.keymap.set("n", "<leader>y", function() LazyVim.pick("files")() end, { desc = "Buscar archivo por nombre" })
 vim.keymap.set("n", "<leader>n", function() LazyVim.pick("lines")() end, { desc = "Buscar palabra en archivo actual" })
@@ -41,7 +38,6 @@ vim.keymap.del("n", "<leader><leader>")
 vim.keymap.set("n", "<leader>.", "V", { desc = "Seleccionar línea completa (Visual)" })
 
 vim.keymap.set("n", "o", "w", { desc = "Ir al siguiente espacio/palabra" })
-vim.keymap.set("n", "i", "b", { desc = "Ir al espacio/palabra anterior" })
 
 
 vim.keymap.set("n", "<leader>l", "<cmd>wincmd l<cr>", { desc = "Mover focus al split derecho" })
@@ -87,48 +83,13 @@ vim.keymap.set("n", "<leader>j", function()
 end, { desc = "Toggle entre archivos (Anterior/Actual)" })
 
 vim.keymap.set("n", "<leader>u", function()
-  -- Abre la definición en un split vertical a la derecha
-  local cword = vim.fn.expand("<cword>")
-  local params = vim.lsp.util.make_position_params()
-
-  local handler = function(err, locations, ctx)
-    local location = locations and locations[1]
-    if err or not location then
-      -- Fallback a etiqueta (tag) si el LSP no responde
-      vim.cmd("silent! tag " .. cword)
-      return
-    end
-
-    local uri = location.targetUri or location.uri
-    local bufnr = vim.uri_to_bufnr(uri)
-    if not vim.api.nvim_buf_is_loaded(bufnr) then
-      vim.fn.bufload(bufnr)
-    end
-    vim.bo[bufnr].buflisted = true
-
-    local existing = vim.fn.bufwinid(bufnr)
-    local win
-    if existing ~= -1 then
-      -- Ya está abierta en otra ventana: simplemente enfocarla
-      win = existing
-      vim.api.nvim_set_current_win(win)
-    else
-      -- Abrir split vertical nuevo a la derecha con el buffer objetivo
-      vim.cmd("rightbelow vsplit")
-      win = vim.api.nvim_get_current_win()
-      vim.api.nvim_win_set_buf(win, bufnr)
-    end
-
-    local range = location.range or location.targetSelectionRange
-    if range and win then
-      local encoding = ctx.offset_encoding or "utf-16"
-      local col = vim.lsp.util._get_line_byte_from_position(bufnr, range.start, encoding)
-      vim.api.nvim_win_set_cursor(win, { range.start.line + 1, col })
-      vim.cmd("normal! zv")
-    end
-  end
-
-  vim.lsp.buf_request(0, "textDocument/definition", params, handler)
+  -- Abre un split vertical a la derecha ANTES de llamar al LSP
+  vim.cmd("rightbelow vsplit")
+  
+  -- Llama a la API optimizada de Neovim para ir a la definición en la nueva ventana
+  vim.lsp.buf.definition({
+    reuse_win = true,
+  })
 end, { desc = "Abrir definición en split derecho" })
 
 -- C#: OmniSharp no autocompleta tipos no importados, solo ofrece la code action "using X;".
@@ -195,27 +156,6 @@ vim.keymap.set("n", "<leader>xu", function()
   end)
 end, { desc = "Agregar el using que falta (C#)" })
 
-vim.keymap.set({ "n", "v", "i" }, "<leader>o", function()
-  vim.cmd("normal! $")
-  if vim.fn.mode() == "i" then vim.cmd("startinsert") end
-end, { desc = "Ir al final de la línea" })
-
-
-vim.keymap.set({ "n", "v", "i" }, "<leader>i", function()
-  vim.cmd("normal! ^")
-  if vim.fn.mode() == "i" then vim.cmd("startinsert") end
-end, { desc = "Ir al principio de la línea" })
-
-
-vim.keymap.set({ "n", "v", "i" }, "<C-x>", function()
-  if vim.fn.mode() == "i" then
-    vim.cmd("normal! dd")
-    vim.cmd("startinsert")
-  else
-    vim.cmd("normal! dd")
-  end
-end, { desc = "Cortar línea completa (Ctrl+X)" })
-
 vim.keymap.set("n", "<leader>p", function()
   local dev_path = "C:/Users/Dell Precision/Documents/Dev"
   local projects = {}
@@ -271,7 +211,7 @@ vim.keymap.set("n", "<leader>p", function()
       picker:close()
       if item then
         vim.fn.chdir(item.path)
-        Snacks.picker.files({ cwd = item.path })
+        Snacks.picker.files({ cwd = item.path, hidden = true, ignored = true, git_ignored = true, no_ignore = true })
       end
     end,
   })
@@ -733,3 +673,17 @@ vim.keymap.set("n", "<leader>d", function()
     end,
   })
 end, { desc = "Menú interactivo de .NET" })
+
+
+-- ✅ Eliminado el modo "i" de las combinaciones
+vim.keymap.set({ "n", "v" }, "<leader>o", function()
+  vim.cmd("normal! $")
+end, { desc = "Ir al final de la línea" })
+
+vim.keymap.set({ "n", "v" }, "<leader>i", function()
+  vim.cmd("normal! ^")
+end, { desc = "Ir al principio de la línea" })
+
+vim.keymap.set({ "n", "v" }, "<C-x>", function()
+  vim.cmd("normal! dd")
+end, { desc = "Cortar línea completa (Ctrl+X)" })

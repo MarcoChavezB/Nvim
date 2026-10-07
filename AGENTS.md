@@ -6,7 +6,7 @@ Personal Neovim config built on the [LazyVim](https://lazyvim.org) starter. Not 
 
 - `init.lua` — entrypoint. Only `require("config.lazy")` plus `vim.env.CC = "gcc"` (needed on this Windows setup; do not drop).
 - `lua/config/` — core overrides auto-loaded by LazyVim: `options.lua`, `keymaps.lua`, `autocmds.lua`.
-- `lua/plugins/` — every `.lua` file (recursively, incl. `langs/`) is auto-imported by lazy.nvim as a plugin spec. Adding a file = adding a spec; no registration needed.
+- `lua/plugins/` — lazy.nvim's `{ import = "plugins" }` does NOT recurse into subfolders: it loads `*.lua` at the top level plus the `init.lua` of each subdirectory. `langs/init.lua` is that hook — new specs in `langs/` MUST be listed there (`{ import = "plugins.langs.<module>" }`), they are not picked up automatically.
 - `lua/plugins/example.lua` is a dead stub (`if true then return {} end`) that silently disables its body — don't add real specs there.
 - `lazy.lua` spec imports LazyVim + extras `ai.copilot-chat`, `lang.dart` and `lang.dotnet`, then `plugins`. Enable/disable extras here.
 - `lazy-lock.json` is the plugin lockfile; commit it. Plugin ops go through `:Lazy`.
@@ -19,6 +19,9 @@ Personal Neovim config built on the [LazyVim](https://lazyvim.org) starter. Not 
 ## Gotchas
 
 - Custom keymap descriptions are Spanish; custom LSP servers are intelephense, dartls, roslyn_ls (in `lua/plugins/lsp.lua`). Many LazyVim defaults are deliberately rebound to `Snacks.picker`.
+- Dart/Flutter doesn't use the standalone `dartls` server: `flutter-tools.nvim` (`lua/plugins/langs/flutter.lua`, repo moved to `nvim-flutter/flutter-tools.nvim`) launches it itself from the Flutter SDK on PATH (verified Flutter 3.41.6 / Dart 3.11.4). `lsp.lua` sets `dartls = { enabled = false }`; running both = duplicated/broken diagnostics and completions (same trap as the old `csharp_ls`). New plugins auto-install on the next startup via `:Lazy` — if `flutter-tools.nvim` is missing from `nvim-data/lazy`, the startup install didn't run, run `:Lazy sync`.
+- `options.lua` filters `vim.diagnostic.set` per filetype: `cs` keeps only ERROR severity (Roslyn analyzer WARN/INFO/HINT discarded, deliberate — blame the old OmniSharp noise); every other filetype (dart/flutter, php, lua…) keeps all severities for an IDE feel. Adding `vim.diagnostic.on_publish_diagnostics` is not needed on Neovim 0.12.
+- Flutter material/Cupertino colors come from Neovim's built-in `vim.lsp.document_color` (LspAttach in `flutter.lua`); the plugin's `color_render`/`lsp.color` is deprecated on 0.12+.
 - `restart_dotnet_server` is defined twice in `lua/config/keymaps.lua` — the second definition wins, the first is dead code. Don't fix either in isolation.
 - Copilot lives only in `lua/plugins/copilot.lua` (ghost text + Tab). The duplicate `blink-cmp-copilot` provider was removed from `lua/plugins/blink.lua` to halve per-keystroke copilot requests.
 - Copilot Chat v2 lives in the same file: the `ai.copilot-chat` extra provides `CopilotC-Nvim/CopilotChat.nvim` (its own default keymaps live under `<leader>a*`), and that file only overrides opts/keys. It reuses the copilot.lua token from `%LOCALAPPDATA%/github-copilot/apps.json`; no second login needed.
@@ -34,6 +37,7 @@ Personal Neovim config built on the [LazyVim](https://lazyvim.org) starter. Not 
 - `roslyn_ls`'s `root_dir` walks up and opens the **first** `.sln`/`.csproj` it finds (no multi-solution picker) — that limitation is exactly what the `seblyng/roslyn.nvim` plugin adds (`:Roslyn target`, source-generated files, daemon mode).
 - C# formatting: `autocmds.lua` sets `vim.b.autoformat = true` + format-on-type (`;`/`}`) via Roslyn (InsertCharPre + `vim.lsp.buf.format` filtered to `client.name == "roslyn_ls"`). Global `autoformat` stays off for the rest.
 - `autocmds.lua` also auto-refreshes Roslyn's references code lens (`BufEnter`/`InsertLeave` for `.cs`), so "N referencias" shows above each symbol like VS Code.
+- `autocmds.lua` notifies once per server per session on `LspAttach` ("<server>: conectado, analizando...") as a loading cue, since dartls/roslyn first analysis can take 30-60s before diagnostics/signs appear.
 - Inlay hints for C# are tuned in `lsp.lua` to suppress the noisy parameter-hint family (same taste that led to excluding `dart`/`vue`).
 - On the first open of a project Roslyn compiles the solution in the background for 30-45s; `workspace/symbol` is partial during that window. Empty completions right after opening a file are expected, not a config bug.
 - `lua/plugins/omnisharp-fix.lua` was deleted with the OmniSharp migration: it filtered the cosmetic `LSP[omnisharp]: Error INVALID_SERVER_MESSAGE: vim.NIL` noise, which can't happen anymore.

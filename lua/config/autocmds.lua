@@ -50,3 +50,25 @@ vim.api.nvim_create_autocmd("FileType", {
     })
   end,
 })
+
+-- Aviso cuando un servidor LSP se adjunta: dartls y roslyn_ls tardan en
+-- analizar (30-60s la primera vez) y conviene saber que se esta cargando.
+-- Una notificacion por servidor y sesion para no spamear al cambiar de buffer.
+local lsp_loading = vim.api.nvim_create_augroup("LazyVimLspLoading", { clear = true })
+local lsp_avisado = {}
+
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = lsp_loading,
+  desc = "Notifica cuando un servidor LSP se adjunta (análisis en curso)",
+  callback = function(ev)
+    local client = vim.lsp.get_client_by_id(ev.data.client_id)
+    if client and client.name and not lsp_avisado[client.name] then
+      lsp_avisado[client.name] = true
+      vim.schedule(function()
+        vim.notify(string.format("%s: conectado, analizando...", client.name), vim.log.levels.INFO, {
+          title = "LSP",
+        })
+      end)
+    end
+  end,
+})

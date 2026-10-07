@@ -8,7 +8,24 @@ return {
       },
       servers = {
         intelephense = {},
-        dartls = {},
+
+        -- vscode-html-language-server: errores, completado de etiquetas y HTML
+        -- embebido (CSS/JS embebidos los analiza él). filetypes con php/blade
+        -- para que las vistas con HTML dentro de .php también funcionen.
+        html = {
+          filetypes = { "html", "htm", "xhtml", "php", "blade" },
+          settings = {
+            html = { suggest = { html5 = true } },
+          },
+        },
+
+        -- vscode-css-language-server: valida CSS/SCSS/LESS con diagnósticos ON.
+        cssls = {},
+
+        -- dartls NO se configura aquí: lo levanta flutter-tools.nvim con el server
+        -- del propio SDK de Flutter (ver lua/plugins/langs/flutter.lua). Dejarlo
+        -- activo = dos servers Dart = diagnósticos y completados rotos/duplicados.
+        dartls = { enabled = false },
 
         -- csharp-ls venía autoactivado por mason-lspconfig (estaba instalado en Mason)
         -- y competía con el servidor C# activo. Se mantiene desactivado.

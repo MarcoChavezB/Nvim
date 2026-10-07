@@ -8,7 +8,10 @@ opt.cmdheight = 1
 opt.relativenumber = false
 opt.tabstop = 4
 opt.expandtab = true
--- El chat de Copilot necesita el popup para listar #recursos y @herramientas
+vim.opt.swapfile = false
+vim.opt.fileformats = { "unix", "dos" }
+vim.opt.fileformat = "unix"
+
 opt.completeopt:append("popup")
 vim.g.autoformat = false
 
@@ -25,20 +28,29 @@ opt.fileencodings = "utf-8"
 -- Escribe sin BOM: por defecto Neovim no lo anade, lo fijamos explicitamente.
 opt.bomb = false
 
--- Solo queremos avisos de ERROR. INFO, WARN, HINT y las sugerencias de los
--- analizadores de Roslyn (OmniSharp) se descartan ANTES de guardarse, asi que
--- tampoco aparecen en el flotante, en los signs, en el statuscolumn ni en
--- <leader>sd (Trouble/Snacks leen de vim.diagnostic).
+-- Filtro de diagnósticos por filetype:
+--  * cs: solo ERROR. Los INFO/WARN/HINT de los analizadores de Roslyn se
+--    descartan ANTES de guardarse, asi que tampoco aparecen en el flotante,
+--    en los signs, en el statuscolumn ni en <leader>sd (Trouble/Snacks leen
+--    de vim.diagnostic). Decision propia para no ahogar con sugerencias C#.
+--  * resto (dart/flutter, php, lua...): todas las severidades, experiencia IDE.
 -- Se filtra en vim.diagnostic.set porque es el unico punto por el que Neovim
 -- guarda diagnosticos: cubre LSP push y pull (0.12 ya no tiene
 -- vim.diagnostic.on_publish_diagnostics) y cualquier otro plugin que publique.
 local diagnostico_set = vim.diagnostic.set
 vim.diagnostic.set = function(namespace, bufnr, diagnostics, opts)
-  local solo_errores = {}
-  for _, d in ipairs(diagnostics or {}) do
-    if d.severity == vim.diagnostic.severity.ERROR then
-      solo_errores[#solo_errores + 1] = d
-    end
+  local buf = bufnr or vim.api.nvim_get_current_buf()
+  if buf == 0 then
+    buf = vim.api.nvim_get_current_buf()
   end
-  return diagnostico_set(namespace, bufnr, solo_errores, opts)
+  if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "cs" then
+    local solo_errores = {}
+    for _, d in ipairs(diagnostics or {}) do
+      if d.severity == vim.diagnostic.severity.ERROR then
+        solo_errores[#solo_errores + 1] = d
+      end
+    end
+    diagnostics = solo_errores
+  end
+  return diagnostico_set(namespace, bufnr, diagnostics, opts)
 end
