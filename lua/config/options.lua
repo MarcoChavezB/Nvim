@@ -4,6 +4,7 @@
 
 local opt = vim.opt
 
+opt.cmdheight = 1
 opt.relativenumber = false
 opt.tabstop = 4
 opt.expandtab = true

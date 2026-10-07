@@ -369,7 +369,171 @@ local function flutter_pick_device()
   end)
 end
 
-vim.keymap.set("n", "<leader>f", function()
+local function smart_dev_menu()
+  local root = LazyVim.root()
+  local ft = vim.bo.filetype
+  local cwd = vim.uv.cwd()
+
+  -- Detectar por archivos marcadores en root
+  local function has_marker(pattern)
+    local ok, res = pcall(vim.fn.glob, root .. "/" .. pattern)
+    if ok and res ~= "" then return true end
+    return false
+  end
+
+  local is_dotnet = has_marker("*.sln") or has_marker("*.csproj") or ft == "cs" or ft == "csharp" or ft == "vb" or ft == "fsharp"
+  local is_flutter = has_marker("pubspec.yaml") or has_marker("flutter.yaml") or has_marker("melos.yaml") or ft == "dart" or ft == "flutter"
+
+  -- Si no detecta por root, también mirar cwd
+  if not is_dotnet and not is_flutter then
+    local function has_cwd(p)
+      local ok, res = pcall(vim.fn.glob, cwd .. "/" .. p)
+      if ok and res ~= "" then return true end
+      return false
+    end
+    is_dotnet = has_cwd("*.sln") or has_cwd("*.csproj")
+    is_flutter = has_cwd("pubspec.yaml") or has_cwd("flutter.yaml")
+  end
+
+  if is_dotnet and not is_flutter then
+    -- Mostrar menú .NET
+    local dotnet_actions = {
+      { text = "▶️  Dotnet Run (Abrir ventana)", run_app = true },
+      { text = "🔄 REINICIAR (Reload en la misma ventana)", restart_app = true },
+      { text = "🔴  Compilar y mostrar errores", build_errors = true },
+      { text = "🛑 Cerrar terminal de dotnet activa", kill_all = true },
+    }
+    Snacks.picker.pick({
+      source = "dotnet_commands",
+      title = "󰏗 Comandos .NET",
+      items = dotnet_actions,
+      format = "text",
+      layout = "select",
+      confirm = function(picker, item)
+        picker:close()
+        if item then
+          if item.run_app or item.restart_app then
+            restart_dotnet_server()
+          elseif item.build_errors then
+            dotnet_build_errors()
+          elseif item.kill_all then
+            if _G.dotnet_alacritty_pid then
+              vim.fn.jobstart("taskkill /F /T /PID " .. _G.dotnet_alacritty_pid)
+              _G.dotnet_alacritty_pid = nil
+              print("🛑 Terminal externa destruida de forma segura.")
+            else
+              print("⚠️ No hay ninguna terminal de .NET registrada activa.")
+            end
+          end
+        end
+      end,
+    })
+    return
+  end
+
+  if is_flutter and not is_dotnet then
+    local flutter_actions = {
+      { text = "📱 Iniciar: Resizable (Experimental)", avd = "Resizable_Experimental" },
+      { text = "📱 Iniciar: Resizable (Experimental) (2)", avd = "Resizable_Experimental_2" },
+      { text = "▶️  Iniciar App (Elegir dispositivo)", run_app = true },
+      { text = "🔄 Hot Restart (Reinicio completo)", cmd = "FlutterRestart" },
+      { text = "🔌 Select Device (Cambiar dispositivo activo)", cmd = "FlutterDevices" },
+      { text = "🛑 Quit Application (Detener app)", cmd = "FlutterQuit" },
+    }
+    Snacks.picker.pick({
+      source = "flutter_commands",
+      title = "⚡ Comandos Flutter",
+      items = flutter_actions,
+      format = "text",
+      layout = "select",
+      confirm = function(picker, item)
+        picker:close()
+        if item then
+          if item.avd then
+            vim.fn.jobstart("emulator -avd " .. item.avd)
+            print("🚀 Levantando emulador nativo: " .. item.avd)
+          elseif item.run_app then
+            flutter_pick_device()
+          elseif item.cmd then
+            pcall(function() vim.cmd(item.cmd) end)
+          end
+        end
+      end,
+    })
+    return
+  end
+
+  if is_flutter and is_dotnet then
+    -- Doble detección: priorizar por filetype si es claro
+    if ft == "cs" or ft == "csharp" then
+      smart_dev_menu_dotnet_like()
+      return
+    end
+    if ft == "dart" then
+      smart_dev_menu_flutter_like()
+      return
+    end
+    -- Si no claro, preguntar
+    Snacks.picker.pick({
+      source = "dev_menu_choice",
+      title = "¿Qué menú abrir?",
+      items = {
+        { text = "󰏗 .NET", choice = "dotnet" },
+        { text = "⚡ Flutter", choice = "flutter" },
+      },
+      format = "text",
+      layout = "select",
+      confirm = function(picker, item)
+        picker:close()
+        if item.choice == "dotnet" then
+          smart_dev_menu_dotnet_like()
+        else
+          smart_dev_menu_flutter_like()
+        end
+      end,
+    })
+    return
+  end
+
+  -- Sin detección clara
+  vim.notify("No se detectó .NET ni Flutter en este proyecto/buffer", vim.log.levels.WARN)
+end
+
+local function smart_dev_menu_dotnet_like()
+  local dotnet_actions = {
+    { text = "▶️  Dotnet Run (Abrir ventana)", run_app = true },
+    { text = "🔄 REINICIAR (Reload en la misma ventana)", restart_app = true },
+    { text = "🔴  Compilar y mostrar errores", build_errors = true },
+    { text = "🛑 Cerrar terminal de dotnet activa", kill_all = true },
+  }
+  Snacks.picker.pick({
+    source = "dotnet_commands",
+    title = "󰏗 Comandos .NET",
+    items = dotnet_actions,
+    format = "text",
+    layout = "select",
+    confirm = function(picker, item)
+      picker:close()
+      if item then
+        if item.run_app or item.restart_app then
+          restart_dotnet_server()
+        elseif item.build_errors then
+          dotnet_build_errors()
+        elseif item.kill_all then
+          if _G.dotnet_alacritty_pid then
+            vim.fn.jobstart("taskkill /F /T /PID " .. _G.dotnet_alacritty_pid)
+            _G.dotnet_alacritty_pid = nil
+            print("🛑 Terminal externa destruida de forma segura.")
+          else
+            print("⚠️ No hay ninguna terminal de .NET registrada activa.")
+          end
+        end
+      end
+    end,
+  })
+end
+
+local function smart_dev_menu_flutter_like()
   local flutter_actions = {
     { text = "📱 Iniciar: Resizable (Experimental)", avd = "Resizable_Experimental" },
     { text = "📱 Iniciar: Resizable (Experimental) (2)", avd = "Resizable_Experimental_2" },
@@ -378,7 +542,6 @@ vim.keymap.set("n", "<leader>f", function()
     { text = "🔌 Select Device (Cambiar dispositivo activo)", cmd = "FlutterDevices" },
     { text = "🛑 Quit Application (Detener app)", cmd = "FlutterQuit" },
   }
-
   Snacks.picker.pick({
     source = "flutter_commands",
     title = "⚡ Comandos Flutter",
@@ -399,7 +562,9 @@ vim.keymap.set("n", "<leader>f", function()
       end
     end,
   })
-end, { desc = "Menú interactivo de Flutter" })
+end
+
+vim.keymap.set("n", "<leader>f", smart_dev_menu, { desc = "Menú por lenguaje detectado" })
 
 
 -- Función para reiniciar el servidor .NET en Alacritty externa
