@@ -6,7 +6,8 @@ local opt = vim.opt
 
 opt.cmdheight = 1
 opt.relativenumber = false
-opt.tabstop = 4
+opt.tabstop = 2
+opt.shiftwidth = 2
 opt.expandtab = true
 vim.opt.swapfile = false
 vim.opt.fileformats = { "unix", "dos" }
@@ -28,7 +29,7 @@ opt.fileencodings = "utf-8"
 -- Escribe sin BOM: por defecto Neovim no lo anade, lo fijamos explicitamente.
 opt.bomb = false
 
--- Filtro de diagnósticos por filetype:
+-- Filtro de diagnÃ³sticos por filetype:
 --  * cs: solo ERROR. Los INFO/WARN/HINT de los analizadores de Roslyn se
 --    descartan ANTES de guardarse, asi que tampoco aparecen en el flotante,
 --    en los signs, en el statuscolumn ni en <leader>sd (Trouble/Snacks leen
@@ -54,3 +55,8 @@ vim.diagnostic.set = function(namespace, bufnr, diagnostics, opts)
   end
   return diagnostico_set(namespace, bufnr, diagnostics, opts)
 end
+
+-- Mantener indentaciÃ³n con tabs (estilo tabs) sin que se autoajuste mal al cerrar parÃ©ntesis
+vim.opt.autoindent = true
+vim.opt.smartindent = true
+vim.opt.cindent = false

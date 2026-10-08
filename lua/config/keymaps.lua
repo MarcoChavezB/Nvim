@@ -1,18 +1,19 @@
-vim.keymap.set("n", "<leader>h", function() LazyVim.pick("live_grep")() end, { desc = "Búsqueda global de palabra" })
-vim.keymap.set("n", "<leader>y", function() LazyVim.pick("files")() end, { desc = "Buscar archivo por nombre" })
-vim.keymap.set("n", "<leader>n", function() LazyVim.pick("lines")() end, { desc = "Buscar palabra en archivo actual" })
-vim.keymap.set("n", "<C-a>", "ggVG", { desc = "Seleccionar todo" })
+local key = vim.keymap.set;
+key("n", "<leader>h", function() LazyVim.pick("live_grep")() end, { desc = "Búsqueda global de palabra" })
+key("n", "<leader>y", function() LazyVim.pick("files")() end, { desc = "Buscar archivo por nombre" })
+key("n", "<leader>n", function() LazyVim.pick("lines")() end, { desc = "Buscar palabra en archivo actual" })
+key("n", "<C-a>", "ggVG", { desc = "Seleccionar todo" })
 
 -- Alternar (Toggle) terminal flotante en la raíz del proyecto
-vim.keymap.set("n", "<leader>t", function()
+key("n", "<leader>t", function()
   Snacks.terminal.toggle(nil, { cwd = LazyVim.root(), id = "proyecto_term" })
 end, { desc = "Toggle Terminal (Raíz)" })
 
 -- 2. Desde Modo Terminal: Permite esconderla usando el mismo atajo sin crear duplicados
-vim.keymap.set("t", "<C-t>", [[<C-\><C-n><cmd>lua Snacks.terminal.toggle(nil, { id = "proyecto_term" })<CR>]], { desc = "Ocultar Terminal" })
+key("t", "<C-t>", [[<C-\><C-n><cmd>lua Snacks.terminal.toggle(nil, { id = "proyecto_term" })<CR>]], { desc = "Ocultar Terminal" })
 
 
-vim.keymap.set("n", "<leader>m", function() 
+key("n", "<leader>m", function() 
   Snacks.picker.recent({ filter = { cwd = true } })() 
 end, { desc = "Archivos recientes (Proyecto)" })
 
@@ -31,19 +32,19 @@ local function duplicar_linea()
   vim.api.nvim_buf_set_lines(bufnr, fin, fin, false, lineas)
 end
 
-vim.keymap.set({ "n", "v" }, "<leader>/", duplicar_linea, { desc = "Duplicar línea" })
+key({ "n", "v" }, "<leader>/", duplicar_linea, { desc = "Duplicar línea" })
 
 vim.keymap.del("n", "<leader><leader>")
 
-vim.keymap.set("n", "<leader>.", "V", { desc = "Seleccionar línea completa (Visual)" })
+key("n", "<leader>.", "V", { desc = "Seleccionar línea completa (Visual)" })
 
-vim.keymap.set("n", "o", "w", { desc = "Ir al siguiente espacio/palabra" })
+key("n", "o", "w", { desc = "Ir al siguiente espacio/palabra" })
 
 
-vim.keymap.set("n", "<leader>l", "<cmd>wincmd l<cr>", { desc = "Mover focus al split derecho" })
-vim.keymap.set("n", "<leader>k", "<cmd>wincmd h<cr>", { desc = "Mover focus al split izquierdo" })
+key("n", "<leader>l", "<cmd>wincmd l<cr>", { desc = "Mover focus al split derecho" })
+key("n", "<leader>k", "<cmd>wincmd h<cr>", { desc = "Mover focus al split izquierdo" })
 -- 💡 Toggle inteligente entre ventana de Arriba y Abajo
-vim.keymap.set({ "n", "t" }, "<leader>c", function()
+key({ "n", "t" }, "<leader>c", function()
   -- Obtiene el número de la ventana actual
   local current_win = vim.api.nvim_get_current_win()
   
@@ -63,26 +64,26 @@ vim.keymap.set({ "n", "t" }, "<leader>c", function()
 end, { desc = "Toggle enfoque entre Arriba / Abajo" })
 
 
-vim.keymap.set("n", "<leader>b", "<cmd>vsplit<cr>", { desc = "Split vertical" })
-vim.keymap.set("n", "<leader>v", "<cmd>split<cr>", { desc = "Split horizontal" })
+key("n", "<leader>b", "<cmd>vsplit<cr>", { desc = "Split vertical" })
+key("n", "<leader>v", "<cmd>split<cr>", { desc = "Split horizontal" })
 
-vim.keymap.set("n", "<leader>g", function() LazyVim.terminal({ "lazygit" }, { esc_esc = false, ctrl_hjkl = false }) end, { desc = "Abrir LazyGit" })
+key("n", "<leader>g", function() LazyVim.terminal({ "lazygit" }, { esc_esc = false, ctrl_hjkl = false }) end, { desc = "Abrir LazyGit" })
 
 -- Copiar la selección visual al portapapeles del sistema con <leader>y
-vim.keymap.set("v", "<C-c>", '"+y', { desc = "Copiar con Ctrl+C" })
+key("v", "<C-c>", '"+y', { desc = "Copiar con Ctrl+C" })
 
 
-vim.keymap.set("n", "K", function()
+key("n", "K", function()
   -- Usamos el comando hover del LSP
   vim.lsp.buf.hover()
 end, { desc = "Ver documentación (Hover)" })
 
 -- Toggle entre archivo actual y el anterior con Ctrl + Tab
-vim.keymap.set("n", "<leader>j", function()
+key("n", "<leader>j", function()
   vim.cmd("buffer #")
 end, { desc = "Toggle entre archivos (Anterior/Actual)" })
 
-vim.keymap.set("n", "<leader>u", function()
+key("n", "<leader>u", function()
   -- Abre un split vertical a la derecha ANTES de llamar al LSP
   vim.cmd("rightbelow vsplit")
   
@@ -95,7 +96,7 @@ end, { desc = "Abrir definición en split derecho" })
 -- C#: OmniSharp no autocompleta tipos no importados, solo ofrece la code action "using X;".
 -- Esa accion llega sin 'edit': hay que pedir 'codeAction/resolve' y aplicar el cambio a mano
 -- (Neovim no hace el resolve solo).
-vim.keymap.set("n", "<leader>xu", function()
+key("n", "<leader>xu", function()
   local bufnr = vim.api.nvim_get_current_buf()
   local client = vim.lsp.get_clients({ bufnr = bufnr, method = "textDocument/codeAction" })[1]
   if not client then
@@ -156,7 +157,7 @@ vim.keymap.set("n", "<leader>xu", function()
   end)
 end, { desc = "Agregar el using que falta (C#)" })
 
-vim.keymap.set("n", "<leader>p", function()
+key("n", "<leader>p", function()
   local dev_path = "C:/Users/Dell Precision/Documents/Dev"
   local projects = {}
 
@@ -504,7 +505,7 @@ local function smart_dev_menu_flutter_like()
   })
 end
 
-vim.keymap.set("n", "<leader>f", smart_dev_menu, { desc = "Menú por lenguaje detectado" })
+key("n", "<leader>f", smart_dev_menu, { desc = "Menú por lenguaje detectado" })
 
 
 -- Función para reiniciar el servidor .NET en Alacritty externa
@@ -635,17 +636,17 @@ local function dotnet_build_errors()
   })
 end
 
-vim.keymap.set("n", "<leader>dr", restart_dotnet_server, { desc = "Dotnet: Reiniciar Servidor (misma ventana)" })
+key("n", "<leader>dr", restart_dotnet_server, { desc = "Dotnet: Reiniciar Servidor (misma ventana)" })
 
-vim.keymap.set("n", "<leader>de", dotnet_build_errors, { desc = "Dotnet: Compilar y mostrar errores" })
+key("n", "<leader>de", dotnet_build_errors, { desc = "Dotnet: Compilar y mostrar errores" })
 
-vim.keymap.set("n", "<leader>d", function()
+key("n", "<leader>d", function()
   local dotnet_actions = {
     { text = "▶️  Dotnet Run (Abrir ventana)", run_app = true },
     { text = "🔄 REINICIAR (Reload en la misma ventana)", restart_app = true },
     { text = "🔴  Compilar y mostrar errores", build_errors = true },
     { text = "🛑 Cerrar terminal de dotnet activa", kill_all = true },
-  }
+ }
 
   Snacks.picker.pick({
     source = "dotnet_commands",
@@ -676,14 +677,14 @@ end, { desc = "Menú interactivo de .NET" })
 
 
 -- ✅ Eliminado el modo "i" de las combinaciones
-vim.keymap.set({ "n", "v" }, "<leader>o", function()
+key({ "n", "v" }, "<leader>o", function()
   vim.cmd("normal! $")
 end, { desc = "Ir al final de la línea" })
 
-vim.keymap.set({ "n", "v" }, "<leader>i", function()
+key({ "n", "v" }, "<leader>i", function()
   vim.cmd("normal! ^")
 end, { desc = "Ir al principio de la línea" })
 
-vim.keymap.set({ "n", "v" }, "<C-x>", function()
+key({ "n", "v" }, "<C-x>", function()
   vim.cmd("normal! dd")
 end, { desc = "Cortar línea completa (Ctrl+X)" })
