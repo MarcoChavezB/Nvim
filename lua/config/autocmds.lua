@@ -1,36 +1,25 @@
-vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
-  pattern = { '*.cshtml', '*.razor' },
-  callback = function()
-    vim.bo.filetype = 'razor'
-  end,
-})
-defer_fn(function()
-      pcall(vim.lsp.enable, 'roslyn_ls', true)
-      pcall(vim.lsp.start, { name = 'roslyn_ls', bufnr = ev.buf })
-    end, 200)
-  end,
-})
-  end
-    if not vim.g._lsp_notified[key] then
-      vim.notify(client.name .. ': conectado, analizando...', vim.log.levels.INFO)
-      vim.g._lsp_notified[key] = true
-    end
-  end,
-})
+-- Autocmds are automatically loaded on the VeryLazy event
+-- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
 
-vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
-  pattern = { '*.cshtml', '*.razor' },
+-- Formateo de C#: autoformato al guardar y formato en vivo al teclear ; o }
+local csharp_augroup = vim.api.nvim_create_augroup("LazyVimCSharpFormat", { clear = true })
+
+vim.api.nvim_create_autocmd("FileType", {
+  group = csharp_augroup,
+  pattern = "cs",
   callback = function()
-    vim.bo.filetype = 'razor'
-  end,
-})
-defer_fn(function()
-      pcall(vim.lsp.enable, 'roslyn_ls', true)
-      pcall(vim.lsp.start, { name = 'roslyn_ls', bufnr = ev.buf })
-    end, 300)
-  end,
-})
-nction(client)
+    vim.b.autoformat = true
+    vim.api.nvim_create_autocmd("InsertCharPre", {
+      group = csharp_augroup,
+      buffer = 0,
+      callback = function()
+        local ch = vim.v.char
+        if ch == ";" or ch == "}" then
+          vim.schedule(function()
+            vim.lsp.buf.format({
+              bufnr = 0,
+              async = true,
+              filter = function(client)
                 return client.name == "roslyn_ls"
               end,
             })
@@ -55,7 +44,7 @@ local lsp_avisado = {}
 
 vim.api.nvim_create_autocmd("LspAttach", {
   group = lsp_loading,
-  desc = "Avisar cuando un LSP se conecta y empieza a analizar",
+  desc = "Notifica cuando un servidor LSP se adjunta (análisis en curso)",
   callback = function(ev)
     local client = vim.lsp.get_client_by_id(ev.data.client_id)
     if client and client.name and not lsp_avisado[client.name] then
@@ -85,51 +74,27 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
--- .cshtml/.razor: HTML + Razor
-vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-  pattern = { "*.cshtml", "*.razor" },
+-- Registra la línea de cada modificación real del buffer (para <leader>c, volver
+-- al cambio anterior). Usa b:changedtick para no registrar visitas sin cambios y
+-- guarda la lista por buffer, así solo afecta al archivo actual.
+local edit_track = vim.api.nvim_create_augroup("LazyVimEditTrack", { clear = true })
+vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+  group = edit_track,
+  desc = "Registra la posición de cada edición del buffer",
   callback = function()
-    vim.bo.filetype = "razor"
-  end,
-})
-
--- Razor: permitir snippets HTML/CSS y comportamiento web
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "razor",
-  callback = function()
-    vim.bo.commentstring = "@* %s *@"
-  end,
-})
--- Emmet tambiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©n en Razor
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "razor",
-  callback = function()
-    vim.g.user_emmet_install_global = 0
-    vim.cmd("EmmetInstall")
-  end,
-})
-
--- Razor: asegurar snippets HTML/CSS disponibles
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "razor",
-  callback = function()
-    local ok, ls = pcall(require, "luasnip")
-    if ok and ls and ls.filetype_extend then
-      ls.filetype_extend("razor", { "html", "css" })
+    local tick = vim.b.changedtick
+    if vim.b.edit_last_tick == tick then
+      return
     end
-  end,
-})
-
--- Forzar Roslyn en Razor si no hay cliente
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = { "razor", "cshtml" },
-  callback = function(ev)
-    local clients = vim.lsp.get_clients({ bufnr = ev.buf })
-    if #clients == 0 then
-      vim.defer_fn(function()
-        pcall(vim.lsp.enable, "roslyn_ls", true)
-        pcall(vim.lsp.start, { name = "roslyn_ls", bufnr = ev.buf, root_dir = vim.fn.getcwd() })
-      end, 500)
+    vim.b.edit_last_tick = tick
+    local line = vim.api.nvim_win_get_cursor(0)[1]
+    local list = vim.b.edit_positions
+    if type(list) ~= "table" then
+      list = {}
     end
+    if list[#list] ~= line then
+      list[#list + 1] = line
+    end
+    vim.b.edit_positions = list
   end,
 })
