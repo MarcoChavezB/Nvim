@@ -1,0 +1,40 @@
+{
+  "Blade Extends": {
+    "prefix": "extends",
+    "body": [
+      "@extends('${1:layouts.app}')",
+      "",
+      "@section('${2:content}')",
+      "    ${0}",
+      "@endsection"
+    ],
+    "description": "Extender layout"
+  },
+  "Blade Section": {
+    "prefix": "section",
+    "body": [
+      "@section('${1:content}')",
+      "    ${0}",
+      "@endsection"
+    ],
+    "description": "Sección Blade"
+  },
+  "Blade If": {
+    "prefix": "if",
+    "body": [
+      "@if(${1:condition})",
+      "    ${0}",
+      "@endif"
+    ],
+    "description": "If Blade"
+  },
+  "Blade Foreach": {
+    "prefix": "foreach",
+    "body": [
+      "@foreach(${1:\\$items} as ${2:\\$item})",
+      "    ${0}",
+      "@endforeach"
+    ],
+    "description": "Foreach Blade"
+  }
+}

@@ -13,12 +13,24 @@ return {
       },
       sources = {
         default = { 'lsp', 'path', 'snippets', 'buffer' },
+
+        -- Fuentes específicas para archivos SQL
+        per_filetype = {
+          sql   = { 'dadbod', 'snippets', 'buffer' },
+          mysql = { 'dadbod', 'snippets', 'buffer' },
+          plsql = { 'dadbod', 'snippets', 'buffer' },
+        },
+
+        providers = {
+          dadbod = {
+            name = 'Dadbod',
+            module = 'vim_dadbod_completion.blink',
+          },
+        },
       },
-      -- Personalización del diseño y comportamiento visual:
       completion = {
-        -- Menú flotante de sugerencias
         menu = {
-          border = 'rounded', -- Bordes redondeados en la ventana de autocompletado
+          border = 'rounded',
           winhighlight = 'Normal:BlinkCmpMenu,FloatBorder:BlinkCmpMenuBorder,CursorLine:BlinkCmpMenuSelection,Search:None',
           draw = {
             columns = {
@@ -28,7 +40,6 @@ return {
             },
           },
         },
-        -- Ventana emergente de documentación (Muestra info del código seleccionado)
         documentation = {
           auto_show = true,
           auto_show_delay_ms = 150,

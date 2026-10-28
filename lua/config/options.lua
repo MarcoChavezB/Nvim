@@ -29,22 +29,15 @@ opt.fileencodings = "utf-8"
 -- Escribe sin BOM: por defecto Neovim no lo anade, lo fijamos explicitamente.
 opt.bomb = false
 
--- Filtro de diagnÃ³sticos por filetype:
---  * cs: solo ERROR. Los INFO/WARN/HINT de los analizadores de Roslyn se
---    descartan ANTES de guardarse, asi que tampoco aparecen en el flotante,
---    en los signs, en el statuscolumn ni en <leader>sd (Trouble/Snacks leen
---    de vim.diagnostic). Decision propia para no ahogar con sugerencias C#.
---  * resto (dart/flutter, php, lua...): todas las severidades, experiencia IDE.
--- Se filtra en vim.diagnostic.set porque es el unico punto por el que Neovim
--- guarda diagnosticos: cubre LSP push y pull (0.12 ya no tiene
--- vim.diagnostic.on_publish_diagnostics) y cualquier otro plugin que publique.
+-- Filtro de diagnÃ³sticos: solo mostrar errores en todo el workspace.
+-- Se descartan WARN/INFO/HINT para reducir ruido.
 local diagnostico_set = vim.diagnostic.set
 vim.diagnostic.set = function(namespace, bufnr, diagnostics, opts)
   local buf = bufnr or vim.api.nvim_get_current_buf()
   if buf == 0 then
     buf = vim.api.nvim_get_current_buf()
   end
-  if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "cs" then
+  if vim.api.nvim_buf_is_loaded(buf) then
     local solo_errores = {}
     for _, d in ipairs(diagnostics or {}) do
       if d.severity == vim.diagnostic.severity.ERROR then
@@ -58,5 +51,23 @@ end
 
 -- Mantener indentaciÃ³n con tabs (estilo tabs) sin que se autoajuste mal al cerrar parÃ©ntesis
 vim.opt.autoindent = true
-vim.opt.smartindent = true
+vim.opt.smartindent = false
 vim.opt.cindent = false
+vim.opt.indentexpr = ""
+vim.opt.copyindent = true
+vim.opt.preserveindent = true
+vim.opt.formatoptions:remove({ "o", "r" })
+
+-- Forzar a copiar la indentación exacta de la línea anterior
+-- Ignora indentexpr de filetype/treesitter que recalcula por bloque
+local group = vim.api.nvim_create_augroup("PreservePrevIndent", { clear = true })
+vim.api.nvim_create_autocmd("FileType", {
+  group = group,
+  callback = function()
+    vim.bo.indentexpr = ""
+    vim.bo.indentkeys = ""
+    vim.bo.autoindent = true
+    vim.bo.smartindent = false
+    vim.bo.cindent = false
+  end,
+})

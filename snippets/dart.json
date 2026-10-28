@@ -1,0 +1,65 @@
+{
+  "Flutter StatelessWidget": {
+    "prefix": "stless",
+    "body": [
+      "class ${1:MyWidget} extends StatelessWidget {",
+      "  const ${1:MyWidget}({super.key});",
+      "",
+      "  @override",
+      "  Widget build(BuildContext context) {",
+      "    return ${2:Container()};",
+      "  }",
+      "}"
+    ],
+    "description": "Widget sin estado (StatelessWidget)"
+  },
+  "Flutter StatefulWidget": {
+    "prefix": "stful",
+    "body": [
+      "class ${1:MyWidget} extends StatefulWidget {",
+      "  const ${1:MyWidget}({super.key});",
+      "",
+      "  @override",
+      "  State<${1:MyWidget}> createState() => _${1:MyWidget}State();",
+      "}",
+      "",
+      "class _${1:MyWidget}State extends State<${1:MyWidget}> {",
+      "  @override",
+      "  Widget build(BuildContext context) {",
+      "    return ${2:Container()};",
+      "  }",
+      "}"
+    ],
+    "description": "Widget con estado (StatefulWidget + State)"
+  },
+  "Flutter StatefulWidget with Animation": {
+    "prefix": "stanim",
+    "body": [
+      "class ${1:MyWidget} extends StatefulWidget {",
+      "  const ${1:MyWidget}({super.key});",
+      "",
+      "  @override",
+      "  State<${1:MyWidget}> createState() => _${1:MyWidget}State();",
+      "}",
+      "",
+      "class _${1:MyWidget}State extends State<${1:MyWidget}> with SingleTickerProviderStateMixin {",
+      "  late final AnimationController _controller = AnimationController(",
+      "    vsync: this,",
+      "    duration: const Duration(seconds: 1),",
+      "  )..repeat(reverse: true);",
+      "",
+      "  @override",
+      "  void dispose() {",
+      "    _controller.dispose();",
+      "    super.dispose();",
+      "  }",
+      "",
+      "  @override",
+      "  Widget build(BuildContext context) {",
+      "    return ${2:Container()};",
+      "  }",
+      "}"
+    ],
+    "description": "StatefulWidget con AnimationController (SingleTickerProviderStateMixin)"
+  }
+}

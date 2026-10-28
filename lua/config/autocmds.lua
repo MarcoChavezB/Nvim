@@ -1,7 +1,3 @@
--- Autocmds are automatically loaded on the VeryLazy event
--- Default autocmds that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/autocmds.lua
-
--- Formateo de C#: autoformato al guardar y formato en vivo al teclear ; o }
 local csharp_augroup = vim.api.nvim_create_augroup("LazyVimCSharpFormat", { clear = true })
 
 vim.api.nvim_create_autocmd("FileType", {
@@ -74,9 +70,6 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
--- Registra la línea de cada modificación real del buffer (para <leader>c, volver
--- al cambio anterior). Usa b:changedtick para no registrar visitas sin cambios y
--- guarda la lista por buffer, así solo afecta al archivo actual.
 local edit_track = vim.api.nvim_create_augroup("LazyVimEditTrack", { clear = true })
 vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
   group = edit_track,

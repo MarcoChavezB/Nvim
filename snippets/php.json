@@ -1,0 +1,33 @@
+{
+  "Class": {
+    "prefix": "class",
+    "body": [
+      "<?php",
+      "",
+      "namespace ${1:App\\\\...};",
+      "",
+      "class ${2:ClassName}",
+      "{",
+      "    ${0}",
+      "}"
+    ],
+    "description": "Clase PHP"
+  },
+  "Route": {
+    "prefix": "routeget",
+    "body": [
+      "Route::get('${1:/}', [${2:Controller}::class, '${3:index}']);"
+    ],
+    "description": "Ruta GET"
+  },
+  "Controller Method": {
+    "prefix": "pubfunc",
+    "body": [
+      "public function ${1:method}(${2:Request \\$request})",
+      "{",
+      "    ${0}",
+      "}"
+    ],
+    "description": "Método público"
+  }
+}
